@@ -1,0 +1,96 @@
+University Schema 
+
+classroom(building, room_number, capacity)
+department(dept_name, building, budget)
+course(course id, title, dept_name, credits)
+instructor(iID, name, dept_name, salary)
+section(course_id, sec_id, semester, year, building, room_number, time_slot_id)
+teaches(iID, course_id, sec_id, semester, year)
+student(sID, name, dept_name, tot_cred)
+takes(sID, course_id, sec_id, semester, year, grade)
+advisor(sID, iID)
+time_slot(time_slot_id, day, start_time, end_time)
+prereq(course_id, prere_ id)
+
+Write the following queries in SQL, using the university schema. (We suggest you actually run these queries on a database, using the sample data that has been provided on the Web site of the book, db-book.com. Instructions for setting up a database, and loading sample data, are provided on the above Web site.)
+1.  A student/instructor wants to know about the time slot for a course. Write a query to help them such that given a course name, your query should give them the time slot for the course.
+2.  An advisor wants to know how many of his/her students are from the same department as he/she is. Give a query which would solve this problem.
+3.  A course has students from different departments and year. The instructor for the course needs an attendance sheet sorted by department, year and student ID. Generate the attendance sheet for the course.
+4. A course has the most number of students than anyother courses. What is the maximum capacity of the room in which the course is conducted.
+5. On a Monday 9am , a course instructor finds that a maintenance work is being carried out in his/her usual class. Help them find an empty class.
+6. Can you find the instructor(s) with the highest salary? Also, get the courses offered by them.
+
+7. Every department has an instructor(s) whose salary is the lowest. Query all the departments and the corresponding instructors.
+8. All the departments in the institution collaborated to conduct an event.  As a result, the budget for every department increased by 10%. Which department was affected the most and by how much amount did its expenditure increase?
+9. Third semester students have enrolled for courses with different credits. List the students whose total credits for that semester is maximum.
+10. Display the list of all course sections offered in Spring 2015, along with the names of the instructors teaching the section. If a section has more than one instructor, it should appear as many times in the result as it has instructors. If it does not have any instructor, it should still appear in the result with the instructor name set to “-”.
+11. Which year has the lowest number of students. Display the students and grade to which the students belong to and also sort them in ascending order.
+12. Find the names of all instructors in the EDM department together with the course id of all courses they teach.
+13. Find the set of all courses taught in the Fall 2016 semester, the Spring 2016 semester, or both.
+14. Find the names of all instructors whose department is in the ‘Academics’ building.
+
+15. List the students in the COE department who are in the same year but are in different grades.
+16. Find the set of all courses taught in the Fall 2014 semester, but not in the Spring 2010 semester.
+17. Find the IDs of all students who were taught by an instructor named Einstein; make sure there are no duplicates in the result.
+18. Find the names of all studentswho have taken at least one Comp. Sci.course; make sure there are no duplicate names in the result.
+19. For each department, find the maximum salary of instructors in that department. You may assume that every department has at least one instructor.
+20. Display a list of all instructors, showing their ID, name, and the number of sections that they have taught. Make sure to show the number of sections as 0 for instructors who have not taught any section. Your query should use an outerjoin, and should not use scalar subqueries.
+
+
+
+
+
+
+UNIVERSITY SCHEMA QUERIES SOLUTION :
+
+1)select day,start_hr,start_min,end_hr,end_min from time_slot where time_slot_id = (select time_slot_id from section where course_id="BIO-101");
+
+2)select count(id) from student where dept_name = (select dept_name from instructor where id=10101);
+
+3)select distinct student.id,dept_name,year from student,takes where student.id=takes.id;
+
+4)select distinct capacity from classroom,section where course_id =(select course_id from (select count(course_id) as x,course_id from takes group by course_id) as t where x=(select max(x) from (select count(course_id) as x from takes group by course_id) as t)) and classroom.room_number=section.room_number;
+
+5)select distinct room_number,building from section where time_slot_id not in(select time_slot_id from time_slot where day="M" and start_hr=9 and start_min=0) and year=2009;
+
+6)select teaches.ID,course_id from teaches where teaches.id= (select instructor.ID from instructor where salary =(select max(salary) from instructor));
+
+7) select min(salary),dept_name from instructor group by dept_name;
+
+8)select dept_name ,((budget*1.1)-budget) as x from department where (budget*1.1)-budget = (select max((budget*1.1)-budget) from department);
+
+9)select name from student,takes,course where course.course_id=takes.course_id and student.id=takes.id and year=2009 and semester="fall" group by name having sum(credits) = (select max(x) from (select sum(credits)as x from student,takes,course where student.id=takes.id and course.course_id=takes.course_id and year=2009 and semester="fall" group by name)as y);
+
+10)select name,title from teaches,instructor,course,section where course.course_id=teaches.course_id and teaches.id=instructor.id and section.year=2009 and section.semester="fall" and teaches.course_id=section.course_id and course.course_id=section.course_id;
+
+11)select name,grade from student,takes where year = (select year from takes group by year having count(id)=(select max(x) from (Select count(id) as x from takes group by year) as y)) and student.id=takes.id order by name;
+
+12)select course_id,name from instructor,teaches where instructor.id in (select instructor.id from instructor where dept_name="elec. eng.") and instructor.id=teaches.id;
+
+13)select title from course where course_id in(select course_id from takes where year=2010 and semester="FALL" or semester="Spring");
+
+14)select name from instructor where dept_name in( select dept_name from department where building="taylor");
+
+15)select name,dept_name from student,takes where year=(select max(year) from takes) and student.id=takes.id;
+
+16)select title from course where course_id in(select course_id from takes where year=2009 and semester="FALL") and course_id not in(select course_id from takes where year=2010 and semester="spring");
+
+17)select id from takes where course_id = (select course_id from teaches where id=(select id from instructor where name="Einstein"));
+
+18)select distinct name from student,course,takes where course.dept_name="comp. sci." and course.course_id=takes.course_id and takes.id=student.id;
+
+19) select max(salary),dept_name from instructor group by dept_name;
+
+20)select instructor.id,name,count(sec_id) from  instructor right outer join teaches on teaches.id=instructor.id  group by instructor.id union (select distinct instructor.id,name,0 from instructor where instructor.id not in (select teaches.id from teaches));
+
+21)select teaches.id,name,count(sec_id) from teaches,instructor where teaches.id=instructor.id  group by instructor.id union (select distinct instructor.id,name,0 from instructor where instructor.id not in (select teaches.id from teaches));
+
+22)select name from student,course,takes where takes.id=student.id and takes.course_id=course.course_id and course.dept_name="biology" group by name having count(*)=(select count(*) from course where dept_name="biology");
+
+23)select distinct name,year,semester from student,takes where student.id=takes.id and tot_cred>100;
+
+24)select name,course_id from teaches,instructor where teaches.id in (select teaches.id from teaches,instructor where teaches.id=instructor.id group by teaches.id having count(course_id) =(select max(x) from (select count(id) as x from teaches group by id) as y)) and teaches.id=instructor.id;
+
+25) select room_number,building from classroom where capacity=(select max(capacity) from classroom);
+
+

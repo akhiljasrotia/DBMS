@@ -1,0 +1,103 @@
+Flight schema
+
+Flights(flno: integer, src: string, dest: string, distance: integer, Departs:time, arrives:time,  
+            price:integer)
+Aircraft( aid: integer, aname: string, cruisingrange: integer)
+Certified( eid: integer, aid: integer)
+Employees( eid: integer, ename: string, salary: integer)
+
+Note: Every pilot is certified for some aircraft, and only pilots are certified to fly. cruisingrange means the maximum distance an aircraft can fly without landing say, 10000 miles. Aircraft Id(aid) is the company id of the aircraft e.g. Aircraft(101, Boeing, 1000). Employess include pilots along with Airlines(Aircraft) staff. Write the following Queries in SQL.
+
+1.Find the names of aircraft such that all pilots certified to operate them earn more than
+$80,000.
+2. For each pilot who is certified for more than three aircraft, find the eid and the maximum
+cruisingrange of the aircraft for which she or he is certified.
+3. Find the names of pilots whose salary is less than the price of the cheapest route from
+Los Angeles to Honolulu.
+4. For all aircraft with cruisingrange over 1000 miles, find the name of the aircraft and the
+average salary of all pilots certified for this aircraft.
+5. Find the names of pilot/s certified for some Boeing aircraft who drove the maximum distance on all flights departing from Hyderabad.
+6. Find the aids of all aircraft that can be used on routes from Los Angeles to Chicago.
+7. Identify the routes that can be piloted by every pilot who makes more than $100,000.
+8. Print the enames of pilots who can operate planes with cruisingrange greater than 3000
+miles but are not certified on any Boeing aircraft.
+9. Compute the difference between the average salary of a pilot and the average salary of
+all employees (including pilots).
+10. Print the name and salary of every nonpilot whose salary is more than the average salary
+ for pilots.
+11. Print the names of employees who are certified only on aircrafts with cruising range
+longer than 1000 miles.
+12. Print the names of employees who are certified only on aircrafts with cruising range
+shorter than 1000 miles, but on at least two such aircrafts.
+13. Print the names of employees who are certified only on aircrafts with cruising range
+longer than 1000 miles and who are certified on some Boeing aircraft.
+14. Finel the eids of pilots certified for some Boeing aircraft.
+15. Find the names of pilots certified for some Boeing aircraft.
+16. Find the aids of all aircraft that can be used on non-stop flights from Kolkata to Madras.
+17. Identify the flights that can be piloted by every pilot whose salary is more than $100,000.
+18. Find the names of pilots who can operate planes with a range greater than 3,000 miles
+but are not certified on any Boeing aircraft.
+19. Find the eids of employees who make the highest salary in every airlines.
+20. Find the eids of employees who make the second highest salary.
+21. Find the eids of employees who are certified for the largest number of aircraft.
+22. Find the eids of employees who are certified for exactly three aircrafts.
+23. Find the total amount paid to pilots who drove greater than 500,000 miles together across all their journey on the routes from Chennai to Dublin and return route also. You need to consider all direct flights along with the connecting flights as well. 
+24. Is there a sequence of flights from Chennai to Frankfurt? Each flight in the sequence is
+required to depart from the city that is the destination of the previous flight; the first
+flight must leave Chennai, the last flight must reach Frankfurt, and there is no restriction
+on the number of intermediate flights. Your query must determine whether a sequence
+of flights from Chennai to Frankfurt exists for any input Flights relation instance.
+
+
+
+
+Flight schema Queries :
+
+1)select aname from aircraft,employees,certified  where aircraft.aid=certified.aid and certified.eid=employees.eid and salary>85000;
+
+2)select eid,max(cruisingrange) from certified,aircraft where certified.aid=aircraft.aid and eid in(select eid from certified group by eid having count(aid) >=3) group by eid;
+ 
+3)select ename,salary from employees where salary > (select min(price)*80 from flights where src="Los Angeles" and dest="Honolulu");
+
+4)select avg(salary),aname from employees,aircraft,certified  where employees.eid=certified.eid and aircraft.aid=certified.aid and cruisingrange>1000 group by aname;
+
+5)select distinct E.Ename from Employees E,Certified C where C.eid=E.eid and C.aid in (select aid from aircraft where aname like "%Boeing%" and  cruisingrange>=(select max(distance) from Flights where SRC="Jammu"));
+
+6)select aid from aircraft where cruisingrange> (select distance from flights where src="Los Angeles" and dest="New York");
+
+7)select flno,src,dest from flights where distance <= (select  min(cruisingrange) from aircraft,employees,certified where aircraft.aid=certified.aid and certified.eid=employees.eid and salary>85000);
+
+8)select distinct ename,employees.eid from certified,employees,aircraft where employees.eid not in(Select eid from certified,aircraft where aname like "Boeing____" and certified.aid=aircraft.aid) and cruisingrange>2000 and certified.aid=aircraft.aid and certified.eid=employees.eid;
+
+9)select (select avg(salary) from employees where employees.eid in(select certified.eid from certified) ) - (select avg(salary) from employees) as "Difference in average salary";
+
+10)select ename,salary from employees where  salary>(select avg(salary) from employees where employees.eid in (Select certified.eid from certified)) and employees.eid not in (select certified.eid from certified);
+
+11)select distinct ename,employees.eid from certified,employees,aircraft where employees.eid not in(Select eid from certified,aircraft where cruisingrange<=2000 and certified.aid=aircraft.aid) and certified.aid=aircraft.aid and certified.eid=employees.eid;
+
+12) select ename from Employees natural join Certified natural join Aircraft where cruisingrange<2000 group by eid having count(*)>=2;
+
+13)select distinct ename,employees.eid from Certified,employees,aircraft where employees.eid not in (select eid from Certified,Aircraft where Aircraft.aid=Certified.aid and cruisingrange<=1000) and aname like "boeing____" and certified.aid=aircraft.aid and certified.eid=employees.eid;
+
+14)select distinct(employees.eid) from employees,aircraft,certified where employees.eid=certified.eid  and aname like 'boeing____' and certified.aid= aircraft.aid;
+
+15)select distinct(ename) from employees,aircraft,certified where employees.eid=certified.eid  and aname like 'boeing____' and certified.aid= aircraft.aid;
+
+16) select aid from aircraft where cruisingrange >= (select distance from flights where src="Chennai" and dest="Jammu");
+
+17) select flno,src,dest from flights where distance <= (select  min(cruisingrange) from aircraft,employees,certified where aircraft.aid=certified.aid and certified.eid=employees.eid and salary>85000);
+
+18)select distinct ename,employees.eid from certified,employees,aircraft where employees.eid not in(Select eid from certified,aircraft where aname like "Boeing____" and certified.aid=aircraft.aid) and cruisingrange>2000 and certified.aid=aircraft.aid and certified.eid=employees.eid;
+
+19)select Employees.eid from Employees natural join Certified natural join Aircraft A where salary>=all(select salary from Employees natural join Certified natural join Aircraft B where A.aid=B.aid);
+
+20)select max(Salary) from employees where salary not in(select max(salary) from employees);
+
+21)select ename from (select count(aid) as freq,ename from employees,certified where employees.eid=certified.eid group by ename) as new_table where freq=(select max(freq) from (select count(Aid) as freq,ename from employees,certified where employees.eid=certified.eid group by ename) as new_table);
+
+22)select ename from (select count(aid) as freq,ename from employees,certified where employees.eid=certified.eid group by ename) as new_table where freq=3;
+
+23)select sum(Salary) from employees,flights,certified,aircraft where certified.aid=aircraft.aid and employees.eid=certified.eid and 2*cruisingrange >= (select (a.distance + b.distance + c.distance) from flights a,flights b,flights c where a.src="jammu" and a.dest=b.src and b.dest=c.src and c.dest="New York");
+
+
+24)select a.src,a.dest,b.src,b.dest,c.src,c.dest from flights a,flights b,flights c where a.src="jammu" and a.dest=b.src and b.dest=c.src and c.dest="New York";
